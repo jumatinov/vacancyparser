@@ -2,7 +2,7 @@ const cheerio = require('cheerio');
 const axios = require('axios');
 const configs = require('./../configs/configs');
 
-async function getTotal(text) {
+async function getTotalFreelansim(text) {
     const searchFreelansim = configs.freelansim.searchUrl + searchToQuery(text);
     try {
         const result = await axios.get(searchFreelansim)
@@ -33,7 +33,7 @@ async function getUrls(url, classConfig, maxLength) {
 
                     const html = response.data;
 
-                    const $ = cheerio.load(html); //Сохраняется body Для парсинга в cheerio
+                    const $ = cheerio.load(html);
                     
                     const hrefs = $(classConfig.parseVacancies);
 
@@ -100,7 +100,7 @@ async function getUsers(text, region, maxUsers, page) {
     try {
         const hrefs = await getUrls(searchFreelansim, configsFreelansim, maxUsers);
 
-        const usersArray = await hrefs.map(async (href) => {             //map cant be broke have to use other method 'some' 
+        const usersArray = await hrefs.map(async (href) => {             
             const user = await getUser(mainFreelansim + href, configsFreelansim.parseInfo);
             return user;
         });
@@ -126,7 +126,8 @@ const parser = {
     getUser: getUser,
     getUrls: getUrls,
     getUsers: getUsers,
-    getTotal: getTotal
+    getTotal: getTotalFreelansim,
+    searchToQuery: searchToQuery
 };
 
 module.exports = parser;

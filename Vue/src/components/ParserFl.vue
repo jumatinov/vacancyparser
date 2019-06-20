@@ -11,7 +11,6 @@
     </button>
     <img :src="image" class="logo" />
     <h2>Parser of <big class="logo_fl">Фрилансим</big></h2>
-    <!--<hr />-->
     <h3>Users Amount {{ total }}</h3>
     <div v-if="fetchInfo">
       <div v-for="user in users" class="info">
@@ -35,18 +34,19 @@
         </div>
       </div>
     </div>
-    <p v-if="message">
+    <p v-if="isLoading">
+      Loading
+    </p>
+    <p class="message">
       {{ message }}
     </p>
-    <div v-if="isLoading">
-      Loading
-    </div>
   </div>
 </template>
 <script>
   import axios from 'axios'
   import image from './../assets/logoFl.png'
   import imageU from './../assets/userImage.png'
+  import { searchToQuery } from './../../../server/src/parse/parse'
   export default {
     data() {
       return {
@@ -81,20 +81,21 @@
             .then(response => {
               if (response.status == 200) {
                 this.total = parseInt(response.data.total);
-                axios.get(`http://localhost:8080/api/parse?text=${searchText}&page=${page}`).then(response => {
-                  console.log(response.status);
-                  if (response.status == 200) {
-                    this.flComponent = true;
-                    this.users = response.data;
-                    this.isLoading = false;
-                    this.fetchInfo = true;
+                axios.get(`http://localhost:8080/api/parse?text=${searchText}&page=${page}`)
+                  .then(response => {
+                    console.log(response.status);
+                    if (response.status == 200) {
+                      this.flComponent = true;
+                      this.users = response.data;
+                      this.isLoading = false;
+                      this.fetchInfo = true;
 
-                    console.log(this.users);
-                  } else {
-                    this.isLoading = false;
-                    this.message = 'Please refresh your query';
-                  }
-                });
+                      console.log(this.users);
+                    } else {
+                      this.isLoading = false;
+                      this.message = 'Please refresh your query';
+                    }
+                  });
               }
             })
           
@@ -111,9 +112,6 @@
             }
           }
         }
-      },
-      createdAt(created) {
-        return created
       }
     },
     mounted() {
@@ -122,15 +120,6 @@
   }
 
 
-  function searchToQuery(search) {
-    const array = search.split(' ');
-    var query = '';
-    for (let i = 0; i < array.length - 1; i++) {
-      query = query + array[i] + '+';
-    }
-    return query + array[array.length - 1];
-  }
-
 </script>
 <style scoped>
   .logo_fl {
@@ -138,17 +127,9 @@
     font-family: monospace;
     font-size: xx-large;
   }
-  .with_email {
-    color: green;
-  }
-
+  
   .info_info .btn {
     margin-bottom: 1%;
-  }
-
-  hr {
-    margin-left: -50px;
-    width: 400px;
   }
 
   .ava {
@@ -156,16 +137,6 @@
     width: 75px;
     float: left;
     margin: 2%;
-  }
-
-  li {
-    list-style-type: none;
-    margin-left: 0%;
-  }
-
-  ul {
-    margin-left: 0; /* Отступ слева в браузере IE и Opera */
-    padding-left: 0;
   }
 
   .info {
@@ -179,17 +150,17 @@
     word-wrap: break-word;
   }
 
-    .info h4 {
+  .info h4 {
       margin-left: 20%;
-    }
+  }
 
-    .info h3 {
-      margin: 2% 0 2% 20%;
-    }
+  .info h3 {
+    margin: 2% 0 2% 20%;
+  }
 
-    .info p {
-      margin-left: 20%;
-    }
+  .info p {
+    margin-left: 20%;
+  }
 
   .fl_parser {
     border-top-left-radius: 25px;
@@ -210,5 +181,8 @@
     margin: 10px 10px 30px 10px;
     padding: 10px;
     width: 20%;
+  }
+  .message {
+    margin: 3%;
   }
 </style>

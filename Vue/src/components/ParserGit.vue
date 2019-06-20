@@ -11,19 +11,18 @@
     </button>
     <img :src="image" class="logo" />
     <h2>Parser of Git</h2>
-    <!--<hr />-->
     <h3>Users Amount {{ total }}</h3>
     <div v-if="fetchInfo">
-      <div v-for="user in users" class="info">
+      <div v-for="(user,index) in users" class="info" :ref="'user'+index">
         <div class="info_info" v-if="emailRequired ? user.email : user.info">
           <img :src="user.avatar_url" class="ava" />
           <h3>Name: {{ user.info.name }}</h3>
           <p>login: {{ user.login }}</p>
           <p>Url: <a :href="user.html_url">{{ user.html_url }}</a></p>
           <p>Score: {{ user.score }} <small v-if="user.info.email" class="with_email"> With An Email</small>  </p>
-          <button class="btn btn-success" v-if="!showMore.includes(user.login)" @click="addShowMore(user.login, true)">Show More</button>
-          <button class="btn btn-secondary" v-else-if="showMore.includes(user.login)" @click="addShowMore(user.login, false)">Hide</button>
-          <div v-if="showMore.includes(user.login)">
+          <button class="btn btn-success" @click="addShowMore(index)">Show More</button>
+          <button class="btn btn-secondary ismore" @click="addShowMore(index)">Hide</button>
+          <div class="ismore">
             <p v-if="user.info.bio">Bio: {{ user.info.bio }}</p>
             <p v-if="user.info.blog">Bio: {{ user.info.blog }}</p>
             <p v-if="user.info.company">Company: {{ user.info.company }}</p>
@@ -32,20 +31,24 @@
             <h4 v-if="user.info.email">Email: {{ user.info.email }} </h4>
             <p>link -> <a href="user.html_url">@{{ user.login }}</a></p>
           </div>
-          <button v-if="showMore.includes(user.login)" class="btn btn-success">
+          <button class="btn btn-success ismore">
             Full Info
           </button>
         </div>
       </div>
     </div>
-    <div v-if="isLoading">
+    <p v-if="isLoading" class="message">
       Loading
-    </div>
+    </p>
+    <p class="message">
+      {{message}}
+    </p>
   </div>
 </template>
 <script>
   import axios from 'axios'
   import image from './../assets/GitHublogo.png'
+  import { searchToQuery } from './../../../server/src/parse/parse'
   export default {
     data() {
       return {
@@ -56,7 +59,13 @@
         total: 0,
         iterator: 0,
         isLoading: false,
-        fetchInfo: false
+        fetchInfo: false,
+        message: '',
+        headersMacro: {
+          headers: {
+            "Authorization": "token " + '72d116fb4955acf711938f17b53261127bdd786b'
+          }
+        }
       }
     },
     computed: {
@@ -66,109 +75,86 @@
     },
     methods: {
       getUsers(page) {
+        const headersMacro = this.headersMacro;
         this.currentPage = page;
         const searchText = searchToQuery(this.search);
-        const location = this.location;
+        const location = this.location ? `location:${this.location}` : '';
+        this.message = '';
         if (searchText.length < 1) {
           this.$emit('searchError');
         } else {
           this.$emit('searchSuccess');
-          axios.get(`https://api.github.com/search/users?q=${searchText}&page=${page}`, headersMacro).then(response => {
-            if (response.status == 200) {
-              this.iterator = 0;
-              this.isLoading = true;
-              this.users = response.data.items;
-              this.total = response.data.total_count;
-              console.log(response.data);
-              for (let i = 0; i < this.users.length - 1; i++) {
-                axios.get(this.users[i].url, headersMacro).then(response => {
-                  if (response.status == 200) {
-                    this.users[this.iterator].info = response.data;
-                    this.users[this.iterator].email = this.users[this.iterator].info.email;
-                    console.log(response.data, this.iterator);
-                    this.iterator++;
-                  }
-                  if (this.iterator == this.users.length - 1 && response.status == 200) {
-                    this.fetchInfo = true;
-                    this.isLoading = false;
-                  }
-                })
+          axios.get(`https://api.github.com/search/users?q=${searchText}+${location}&page=${page}`, headersMacro)
+            .then(response => {
+              if (response.status == 200) {
+                
+                this.users = response.data.items;
+                this.total = response.data.total_count;
+                if (!this.total) {
+                  this.message = 'Nothing found';
+                  this.isLoading = false;
+                } else {
+                  this.isLoading = true;
+                }
+                console.log(response.data);
+
+                for (let i = 0; i < this.users.length; i++) {
+                  axios.get(this.users[i].url, headersMacro).then(response => {
+
+                    if (response.status == 200) {
+                      this.users[i].info = response.data;
+                      this.users[i].email = this.users[i].info.email;
+                      console.log(response.data, i);
+                    }
+                    if (i == this.users.length - 1 && response.status == 200) {
+                      this.fetchInfo = true;
+                      this.isLoading = false;
+                    }
+                  })
+                }
               }
-            }
-          })
+            })
         }
       },
-      addShowMore(login, isShow) {
-        if (isShow) {
-          this.showMore.push(login);
-        }
-        else {
-          for (let i = 0; i < this.showMore.length; i++) {
-            if (this.showMore[i] === login) {
-              this.showMore.splice(i);
-            }
-          }
-        }
+      addShowMore(index) {
+        console.log(this.$refs['user' + index]);
+        console.log(this.$refs);
+        this.$refs['user' + index][0].classList.toggle('active');
       },
-      createdAt(created) {
-        return created
+      searchToQuery(search) {
+        const array = search.split(' ');
+        var query = '';
+        for (let i = 0; i < array.length - 1; i++) {
+          query = query + array[i] + '+';
+        }
+        return query + array[array.length - 1];
       }
-    },
-    mounted() {
     },
     props: ['search', 'emailRequired', 'location']
   }
 
-
-  function searchToQuery(search) {
-    const array = search.split(' ');
-    var query = '';
-    for (let i = 0; i < array.length - 1; i++) {
-      query = query + array[i] + '+';
-    }
-    return query + array[array.length - 1];
-  }
-
-  const headersMacro = {
-    headers: {
-      "Authorization": "token " + '72d116fb4955acf711938f17b53261127bdd786b'
-    }
-  }
 </script>
 <style scoped>
   .with_email {
     color: green;
   }
 
-  .info_info .btn {
-    margin-bottom: 1%;
-  }
-  hr{
-    margin-left: -50px;
-    width: 400px;
-  }
   .ava {
     border-radius: 25%;
     width: 75px;
     float: left;
     margin: 2%;
   }
-  li {
-    list-style-type:none;
-    margin-left: 0%;
-  }
-  ul {
-    margin-left: 0; /* Отступ слева в браузере IE и Opera */
-    padding-left: 0;
-  }
+
   .info {
+    word-wrap: break-word;
     font-size: medium;
-    font-weight:500;
+    font-weight: 500;
     margin: 5px;
     border-radius: 5px;
     text-align: left;
     color: black;
-    background-color:rgb(247, 208, 208);
+    background-color: rgb(247, 208, 208);
   }
   .info h4 {
     margin-left: 20%;
@@ -188,12 +174,21 @@
     width: 50%;
   }
   .btn {
-    margin: 10px 5px 0px;
+    margin: 1%;
   }
   .logo{
     float: left;
     margin: 10px 10px 30px 10px;
     padding:10px;
     width: 20%;
+  }
+  .ismore{
+    display:none;
+  }
+  .info.active .ismore{
+    display:block;
+  }
+  .message{
+    margin: 3%;
   }
 </style>

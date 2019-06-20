@@ -1,12 +1,16 @@
 {
   "ExpandedNodes": [
     "",
+    "\\server",
+    "\\server\\src",
+    "\\server\\src\\configs",
+    "\\server\\src\\parse",
+    "\\server\\src\\route",
     "\\Vue",
     "\\Vue\\src",
     "\\Vue\\src\\actions",
-    "\\Vue\\src\\assets",
-    "\\Vue\\src\\components"
+    "\\Vue\\src\\assets"
   ],
-  "SelectedNode": "\\Vue\\src\\assets\\userImage.png",
+  "SelectedNode": "\\Vue\\src\\components\\ParserFl.vue",
   "PreviewInSolutionExplorer": false
 }

@@ -52,7 +52,6 @@ export default {
       logoGit: imageGit,
       logoFl:'',
       withEmail: false,
-      state: 'main',
       flComponent: true,
       gitComponent: true,
       search: '',
@@ -64,18 +63,6 @@ export default {
     }
     },
     methods: {
-      getUsers(search) {
-        this.gitComponent = false;
-        if (search.length > 0) {
-          this.message = '';
-          let searchText = searchToQuery(search);
-          this.gitComponent = true;
-          this.search = searchText;
-         
-        } else {
-          this.message = 'Введите поисковой запрос'
-        }
-      },
       searchError() {
         this.message = 'Введите поисковой запрос'
       },
@@ -83,15 +70,6 @@ export default {
         this.message = ''
       }
     }
-}
-  
-function searchToQuery(search) {
-  const array = search.split(' ');
-  var query = '';
-  for (let i = 0; i < array.length - 1; i++) {
-    query = query + array[i] + '+';
-  }
-  return query + array[array.length - 1];
 }
 </script>
 
