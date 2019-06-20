@@ -2,6 +2,28 @@ const cheerio = require('cheerio');
 const axios = require('axios');
 const configs = require('./../configs/configs');
 
+async function getTotal(text) {
+    const searchFreelansim = configs.freelansim.searchUrl + searchToQuery(text);
+    try {
+        const result = await axios.get(searchFreelansim)
+            .then(response => {
+                if (response.status == 200) {
+                    var res = {};
+                    const html = response.data;
+                    const $ = cheerio.load(html); 
+                    var total = $('.page-title').text();
+
+                    res.total = total.slice(11, total.length).split(')')[0].split('(')[1];
+
+                    return res;
+                }
+            })
+        return result;
+    } catch (error) {
+        console.log(error);
+    }
+}
+
 async function getUrls(url, classConfig, maxLength) {
     try {
         const result = await axios.get(url)
@@ -40,6 +62,8 @@ async function getUser(url, classConfig) {
                     const html = response.data;
 
                     const $ = cheerio.load(html);
+                    
+                    const login = url.split('/')[4];
 
                     const age = $(classConfig.age).text().trim();
                     const name = $(classConfig.name).text().trim();
@@ -55,6 +79,7 @@ async function getUser(url, classConfig) {
                     user.position = position;
                     user.age = age;
                     user.ava = ava;
+                    user.login = login;
 
                     return user;
                 }
@@ -66,8 +91,8 @@ async function getUser(url, classConfig) {
     }
 }
 
-async function getUsers(text, region, maxUsers) {
-    const searchFreelansim = configs.freelansim.searchUrl + searchToQuery(text); 
+async function getUsers(text, region, maxUsers, page) {
+    const searchFreelansim = configs.freelansim.searchUrl + searchToQuery(text) + '&page=' + page; 
     const mainFreelansim = configs.freelansim.mainUrl;
     const configsFreelansim = configs.freelansim;
     const pagesConfigs = configs.pages; 
@@ -100,7 +125,8 @@ function searchToQuery(search) {
 const parser = {
     getUser: getUser,
     getUrls: getUrls,
-    getUsers: getUsers
+    getUsers: getUsers,
+    getTotal: getTotal
 };
 
 module.exports = parser;

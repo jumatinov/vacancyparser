@@ -2,12 +2,16 @@
   <div id="app">
     <div class="main">
       <img :src="logoGit" class="logo_git" />
-      <img :src="logoGit" class="logo_fl" />
+      <big class="logo_fl">Фрилансим</big>
       <h2>Parser Application</h2>
       <h3>Enter the text and click button which resource would you like to parse</h3>
       <input class="search_bar" type="text" placeholder="Search"
              v-model="search"/>
-      <p>{{ message }}</p>
+      <p class="search_error">{{ message }}</p>
+      <p>
+        <input type="text" class="search_bar location_git" name="name" v-model="locationGit" placeholder="Location" />
+        <input type="text" class="search_bar location_git" name="name" v-model="locationFl" placeholder="Location" />
+      </p>
 
       <input type="checkbox" v-model="withEmail">
       <label for="checkbox">With emails {{ withEmail }}</label>
@@ -21,22 +25,30 @@
 
     <div class="parser">
       <parser-component-git v-if="gitComponent"
-                            :search="search">
+                            :search="search"
+                            :emailRequired="withEmail"
+                            :location="locationGit"
+                            @searchError="searchError"
+                            @searchSuccess="searchSuccess">
       </parser-component-git>
 
       <parser-component-fl v-show="flComponent"
-                           :search="search">
+                           :search="search"
+                           :location="locationFl"
+                            @searchError="searchError"
+                            @searchSuccess="searchSuccess">
       </parser-component-fl>
     </div>
   </div>
 </template>
 
 <script>
-import axios from 'axios'
 import imageGit from './assets/GitHublogo.png'
 export default {
   data () {
     return {
+      locationGit: '',
+      locationFl: '',
       logoGit: imageGit,
       logoFl:'',
       withEmail: false,
@@ -63,16 +75,16 @@ export default {
         } else {
           this.message = 'Введите поисковой запрос'
         }
+      },
+      searchError() {
+        this.message = 'Введите поисковой запрос'
+      },
+      searchSuccess() {
+        this.message = ''
       }
     }
 }
-
-const headersMacro = {
-  headers: {
-    "Authorization": "token " + '6415cb97bde8524cbb03d796e65c2f311d4d6069'
-  }
-}
-
+  
 function searchToQuery(search) {
   const array = search.split(' ');
   var query = '';
@@ -89,10 +101,14 @@ function searchToQuery(search) {
     margin: 32px;
     width: 3%;
   }
-  .logo_fl{
-    float:right;
-    margin: 32px;
-    width: 3%;
+  .logo_fl {
+    float: right;
+    color: black;
+    font-family: monospace;
+    font-size: xx-large;
+    margin-right: 5%;
+    margin-top: 2%;
+    margin-left: -9%;
   }
   .main label {
     margin-right: 3%;
@@ -102,7 +118,7 @@ function searchToQuery(search) {
     border-radius: 25px;
     margin: 1%;
     text-align: center;
-    background: linear-gradient(to right, rgb(72, 56, 56) 50%, red 50%);
+    background: linear-gradient(to right, rgb(72, 56, 56) 50%, orange 50%);
     color: white;
     padding-top: 1px;
   }
@@ -128,5 +144,14 @@ function searchToQuery(search) {
     margin: 20px auto;
   }
 
+  .location_git{
+    width: 15%;
+    margin: 15px;
+  }
+
+  .search_error{
+    color:red;
+    font-size: large;
+  }
 
 </style>

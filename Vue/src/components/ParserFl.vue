@@ -10,29 +10,24 @@
       Next >>
     </button>
     <img :src="image" class="logo" />
-    <h2>Parser of freelansim.ru</h2>
-    <hr />
+    <h2>Parser of <big class="logo_fl">Фрилансим</big></h2>
+    <!--<hr />-->
     <h3>Users Amount {{ total }}</h3>
     <div v-if="fetchInfo">
       <div v-for="user in users" class="info">
         <div class="info_info" v-if="user">
-          <img :src="user.ava" v-if="user.ava" class="ava" />
+          <img :src="user.ava" v-if="user.ava[0]=='h'" class="ava" />
           <img v-else :src="userImage" class="ava" />
           <h3>Name: {{ user.name }}</h3>
           <p v-if="user.age">Age {{ user.age }}</p>
           <p>Position: {{ user.position}}</p>
-          <p> About: {{ user.about }}</p>
+          <p> About: {{ user.mainInfo }}</p>
           <p><a :href="user.url">Link in fl</a></p>
           <button class="btn btn-success" v-if="!showMore.includes(user.login)" @click="addShowMore(user.login, true)">Show More</button>
           <button class="btn btn-secondary" v-else-if="showMore.includes(user.login)" @click="addShowMore(user.login, false)">Hide</button>
           <div v-if="showMore.includes(user.login)">
-            <p v-if="user.info.bio">Bio: {{ user.info.bio }}</p>
-            <p v-if="user.info.blog">Bio: {{ user.info.blog }}</p>
-            <p v-if="user.info.company">Company: {{ user.info.company }}</p>
-            <p v-if="user.info.location">Location: {{ user.info.location }}</p>
-            <p>Followers: {{ user.info.followers }} Following: {{ user.info.following }} </p>
-            <h4>Email: {{ user.info.email }} </h4>
-            <p>link -> <a href="user.html_url">@{{ user.login }}</a></p>
+            <p v-if="user.about">Bio: {{ user.about }}</p>
+            <p>link on his account -> <a href="user.url">@{{ user.login }}</a></p>
           </div>
           <button v-if="showMore.includes(user.login)" class="btn btn-success">
             Full Info
@@ -50,7 +45,7 @@
 </template>
 <script>
   import axios from 'axios'
-  import image from './../assets/GitHublogo.png'
+  import image from './../assets/logoFl.png'
   import imageU from './../assets/userImage.png'
   export default {
     data() {
@@ -75,23 +70,35 @@
     methods: {
       getUsers(page) {
         this.currentPage = page;
-        const searchText = this.search;
+        const searchText = searchToQuery(this.search);
         this.isLoading = true;
+        this.fetchInfo = false;
+        if (searchText.length < 1) {
+          this.$emit('searchError');
+        } else {
+          this.$emit('searchSuccess');
+          axios.get(`http://localhost:8080/api/total?text=${searchText}`)
+            .then(response => {
+              if (response.status == 200) {
+                this.total = parseInt(response.data.total);
+                axios.get(`http://localhost:8080/api/parse?text=${searchText}&page=${page}`).then(response => {
+                  console.log(response.status);
+                  if (response.status == 200) {
+                    this.flComponent = true;
+                    this.users = response.data;
+                    this.isLoading = false;
+                    this.fetchInfo = true;
 
-        axios.get(`http://localhost:8080/api/parse?text=${searchText}`).then(response => {
-          console.log(response.status);
-          if (response.status == 200) {
-            this.flComponent = true;
-            this.users = response.data;
-            this.isLoading = false;
-            this.fetchInfo = true;
-
-            console.log(this.users);
-          } else {
-            this.isLoading = false;
-            this.message = 'Please refresh your query';
-          }
-        });
+                    console.log(this.users);
+                  } else {
+                    this.isLoading = false;
+                    this.message = 'Please refresh your query';
+                  }
+                });
+              }
+            })
+          
+        }
       },
       addShowMore(login, isShow) {
         if (isShow) {
@@ -111,17 +118,26 @@
     },
     mounted() {
     },
-    props: ['search']
+    props: ['search', 'location']
   }
 
-  const headersMacro = {
-    headers: {
-      "Authorization": "token " + '6415cb97bde8524cbb03d796e65c2f311d4d6069'
+
+  function searchToQuery(search) {
+    const array = search.split(' ');
+    var query = '';
+    for (let i = 0; i < array.length - 1; i++) {
+      query = query + array[i] + '+';
     }
+    return query + array[array.length - 1];
   }
+
 </script>
 <style scoped>
-
+  .logo_fl {
+    color: black;
+    font-family: monospace;
+    font-size: xx-large;
+  }
   .with_email {
     color: green;
   }
@@ -131,7 +147,8 @@
   }
 
   hr {
-    width: 75%;
+    margin-left: -50px;
+    width: 400px;
   }
 
   .ava {
@@ -159,6 +176,7 @@
     text-align: left;
     color: black;
     background-color: whitesmoke;
+    word-wrap: break-word;
   }
 
     .info h4 {
@@ -177,8 +195,8 @@
     border-top-left-radius: 25px;
     border-top-right-radius: 25px;
     color: rgb(254, 254, 254);
-    background-color: red;
-    float: left;
+    background-color: orange;
+    float: right;
     width: 50%;
   }
 
@@ -187,8 +205,9 @@
   }
 
   .logo {
+    border-radius: 25px;
     float: left;
-    margin: 10px 10px 40px 10px;
+    margin: 10px 10px 30px 10px;
     padding: 10px;
     width: 20%;
   }

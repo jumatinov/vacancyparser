@@ -11,11 +11,11 @@
     </button>
     <img :src="image" class="logo" />
     <h2>Parser of Git</h2>
-    <hr />
+    <!--<hr />-->
     <h3>Users Amount {{ total }}</h3>
     <div v-if="fetchInfo">
       <div v-for="user in users" class="info">
-        <div class="info_info" v-if="user.info">
+        <div class="info_info" v-if="emailRequired ? user.email : user.info">
           <img :src="user.avatar_url" class="ava" />
           <h3>Name: {{ user.info.name }}</h3>
           <p>login: {{ user.login }}</p>
@@ -29,7 +29,7 @@
             <p v-if="user.info.company">Company: {{ user.info.company }}</p>
             <p v-if="user.info.location">Location: {{ user.info.location }}</p>
             <p>Followers: {{ user.info.followers }} Following: {{ user.info.following }} </p>
-            <h4>Email: {{ user.info.email }} </h4>
+            <h4 v-if="user.info.email">Email: {{ user.info.email }} </h4>
             <p>link -> <a href="user.html_url">@{{ user.login }}</a></p>
           </div>
           <button v-if="showMore.includes(user.login)" class="btn btn-success">
@@ -67,29 +67,36 @@
     methods: {
       getUsers(page) {
         this.currentPage = page;
-        const searchText = this.search;
-        axios.get(`https://api.github.com/search/users?q=${searchText}&page=${page}`, headersMacro).then(response => {
-          if (response.status == 200) {
-            this.iterator = 0;
-            this.isLoading = true;
-            this.users = response.data.items;
-            this.total = response.data.total_count;
-            console.log(response.data);
-            for (let i = 0; i < this.users.length - 1; i++) {
-              axios.get(this.users[i].url, headersMacro).then(response => {
-                if (response.status == 200) {
-                  this.users[this.iterator].info = response.data;
-                  console.log(response.data, this.iterator);
-                  this.iterator++;
-                }
-                if (this.iterator == this.users.length - 1 && response.status == 200) {
-                  this.fetchInfo = true;
-                  this.isLoading = false;
-                }
-              })
+        const searchText = searchToQuery(this.search);
+        const location = this.location;
+        if (searchText.length < 1) {
+          this.$emit('searchError');
+        } else {
+          this.$emit('searchSuccess');
+          axios.get(`https://api.github.com/search/users?q=${searchText}&page=${page}`, headersMacro).then(response => {
+            if (response.status == 200) {
+              this.iterator = 0;
+              this.isLoading = true;
+              this.users = response.data.items;
+              this.total = response.data.total_count;
+              console.log(response.data);
+              for (let i = 0; i < this.users.length - 1; i++) {
+                axios.get(this.users[i].url, headersMacro).then(response => {
+                  if (response.status == 200) {
+                    this.users[this.iterator].info = response.data;
+                    this.users[this.iterator].email = this.users[this.iterator].info.email;
+                    console.log(response.data, this.iterator);
+                    this.iterator++;
+                  }
+                  if (this.iterator == this.users.length - 1 && response.status == 200) {
+                    this.fetchInfo = true;
+                    this.isLoading = false;
+                  }
+                })
+              }
             }
-          }
-        })
+          })
+        }
       },
       addShowMore(login, isShow) {
         if (isShow) {
@@ -109,12 +116,22 @@
     },
     mounted() {
     },
-    props: ['search']
+    props: ['search', 'emailRequired', 'location']
+  }
+
+
+  function searchToQuery(search) {
+    const array = search.split(' ');
+    var query = '';
+    for (let i = 0; i < array.length - 1; i++) {
+      query = query + array[i] + '+';
+    }
+    return query + array[array.length - 1];
   }
 
   const headersMacro = {
     headers: {
-      "Authorization": "token " + '6415cb97bde8524cbb03d796e65c2f311d4d6069'
+      "Authorization": "token " + '72d116fb4955acf711938f17b53261127bdd786b'
     }
   }
 </script>
@@ -127,7 +144,8 @@
     margin-bottom: 1%;
   }
   hr{
-    width: 75%;
+    margin-left: -50px;
+    width: 400px;
   }
   .ava {
     border-radius: 25%;
@@ -174,7 +192,7 @@
   }
   .logo{
     float: left;
-    margin: 10px 10px 40px 10px;
+    margin: 10px 10px 30px 10px;
     padding:10px;
     width: 20%;
   }
