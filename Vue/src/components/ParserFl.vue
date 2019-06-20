@@ -71,12 +71,12 @@
       getUsers(page) {
         this.currentPage = page;
         const searchText = searchToQuery(this.search);
-        this.isLoading = true;
         this.fetchInfo = false;
         if (searchText.length < 1) {
           this.$emit('searchError');
         } else {
           this.$emit('searchSuccess');
+          this.isLoading = true;
           axios.get(`http://localhost:8080/api/total?text=${searchText}`)
             .then(response => {
               if (response.status == 200) {
